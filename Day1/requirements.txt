@@ -1,0 +1,12 @@
+tensorflow
+torch
+scikit-learn
+flwr
+shap
+ctgan
+tslearn
+streamlit
+pandas
+numpy
+matplotlib
+seaborn
