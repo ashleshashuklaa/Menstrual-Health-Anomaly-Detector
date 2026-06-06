@@ -42,31 +42,36 @@ start_dtw = time.time()
 train_seq = X_train[:, :, 0]
 test_seq  = X_test[:, :, 0]
 
-# Threshold from training distances
-train_dists = []
-for i in range(len(train_seq)):
-    for j in range(i+1, min(i+20, len(train_seq))):
-        train_dists.append(dtw(train_seq[i], train_seq[j]))
+# Normal template banao
+normal_seq = train_seq[y_train == 0]
+template   = np.mean(normal_seq, axis=0)
 
-threshold = np.mean(train_dists) + 1 * np.std(train_dists)
+# Har normal sample ki template se distance nikalo
+train_dists = []
+for seq in normal_seq:
+    dist = dtw(seq, template)
+    train_dists.append(dist)
+
+# Threshold set karo
+threshold = np.mean(train_dists) + 2 * np.std(train_dists)
 print(f"DTW Threshold: {threshold:.4f}")
 
-# Predict
-dtw_scores = []
+# Predict on test set
+dtw_scores      = []
 predictions_dtw = []
 for seq in test_seq:
-    min_dist = min(dtw(seq, s) for s in train_seq)
-    dtw_scores.append(min_dist)
-    predictions_dtw.append(1 if min_dist > threshold else 0)
+    dist = dtw(seq, template)
+    dtw_scores.append(dist)
+    predictions_dtw.append(1 if dist > threshold else 0)
 
 predictions_dtw = np.array(predictions_dtw)
 dtw_scores      = np.array(dtw_scores)
 elapsed_dtw     = time.time() - start_dtw
 
 # DTW Metrics
-dtw_precision = precision_score(y_test, predictions_dtw)
-dtw_recall    = recall_score(y_test, predictions_dtw)
-dtw_f1        = f1_score(y_test, predictions_dtw)
+dtw_precision = precision_score(y_test, predictions_dtw, zero_division=0)
+dtw_recall    = recall_score(y_test, predictions_dtw, zero_division=0)
+dtw_f1        = f1_score(y_test, predictions_dtw, zero_division=0)
 dtw_auc       = roc_auc_score(y_test, dtw_scores)
 
 print(f"\n===== DTW RESULTS =====")
@@ -83,25 +88,25 @@ print("\nRunning One-Class SVM...")
 start_svm = time.time()
 
 # Scale
-X_normal = X_train_flat[y_train == 0]
-scaler   = StandardScaler()
+X_normal        = X_train_flat[y_train == 0]
+scaler          = StandardScaler()
 X_normal_scaled = scaler.fit_transform(X_normal)
 X_test_scaled   = scaler.transform(X_test_flat)
 
-# Train
+# Train only on normal data
 ocsvm = OneClassSVM(kernel='rbf', nu=0.05, gamma='scale')
 ocsvm.fit(X_normal_scaled)
 
 # Predict
-raw_preds    = ocsvm.predict(X_test_scaled)
-ocsvm_preds  = (raw_preds == -1).astype(int)
-svm_scores   = -ocsvm.decision_function(X_test_scaled)
-elapsed_svm  = time.time() - start_svm
+raw_preds   = ocsvm.predict(X_test_scaled)
+ocsvm_preds = (raw_preds == -1).astype(int)
+svm_scores  = -ocsvm.decision_function(X_test_scaled)
+elapsed_svm = time.time() - start_svm
 
 # SVM Metrics
-svm_precision = precision_score(y_test, ocsvm_preds)
-svm_recall    = recall_score(y_test, ocsvm_preds)
-svm_f1        = f1_score(y_test, ocsvm_preds)
+svm_precision = precision_score(y_test, ocsvm_preds, zero_division=0)
+svm_recall    = recall_score(y_test, ocsvm_preds, zero_division=0)
+svm_f1        = f1_score(y_test, ocsvm_preds, zero_division=0)
 svm_auc       = roc_auc_score(y_test, svm_scores)
 
 print(f"\n===== ONE-CLASS SVM RESULTS =====")
@@ -114,7 +119,7 @@ print(f"Time      : {elapsed_svm:.2f} sec")
 # ============================================
 # 5. SAVE RESULTS CSV
 # ============================================
-results_path = r"C:\Users\Lenovo\Documents\manit\Menstrual_project\results"
+results_path = r"C:\Users\Lenovo\Documents\manit\Menstrual_project\Menstrual-Health-Anomaly-Detector\kajal\results"
 os.makedirs(results_path, exist_ok=True)
 
 results = pd.DataFrame([
@@ -147,7 +152,7 @@ print("Results CSV saved! ✅")
 # ============================================
 # 6. ROC CURVE PLOT
 # ============================================
-figures_path = r"C:\Users\Lenovo\Documents\manit\Menstrual_project\figures"
+figures_path = r"C:\Users\Lenovo\Documents\manit\Menstrual_project\Menstrual-Health-Anomaly-Detector\kajal\figures"
 os.makedirs(figures_path, exist_ok=True)
 
 fpr_dtw, tpr_dtw, _ = roc_curve(y_test, dtw_scores)
