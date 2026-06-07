@@ -1,3 +1,3 @@
 model,precision,recall,f1,auc_roc,train_time_sec
-DTW,0.9143,0.7111,0.8,0.9727,9.11
-OneClassSVM,0.6522,1.0,0.7895,0.9891,0.02
+DTW,0.9143,0.7111,0.8,0.9727,9.85
+OneClassSVM,0.6522,1.0,0.7895,0.9891,0.04
